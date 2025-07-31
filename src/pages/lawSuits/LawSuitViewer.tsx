@@ -43,12 +43,6 @@ interface LawSuit {
     lastName: string;
     email?: string;
   };
-  // As propriedades 'client' e 'lawyer' diretas NÃO existem mais no modelo Case do backend.
-  // Se o backend não mapear 'clientPrimary' para 'client' e 'lawyerPrimary' para 'lawyer'
-  // na resposta da API, estas devem ser removidas para evitar erros de tipagem.
-  // Removidas para garantir que o código só use clientPrimary/lawyerPrimary.
-  // client?: { id: string; firstName: string; lastName: string; email?: string; }; // Removido
-  // lawyer?: { id: string; firstName: string; lastName: string; email?: string; }; // Removido
 }
 
 // Tipagem para Mensagem (mantida)
@@ -304,7 +298,7 @@ export default function LawSuitViewer() {
     if (
       !newMessageContent.trim() ||
       !lawsuit ||
-      !lawsuit.clientPrimaryId || // Acessar clientPrimaryId
+      !lawsuit.clientPrimary?.id || // Acessar clientPrimaryId
       !user?.id
     ) {
       setError(
@@ -312,7 +306,7 @@ export default function LawSuitViewer() {
       );
       return;
     }
-    sendChatMessage(newMessageContent, lawsuit.id, lawsuit.clientPrimaryId); // Usar clientPrimaryId
+    sendChatMessage(newMessageContent, lawsuit.id, lawsuit.clientPrimary?.id); // Usar clientPrimaryId
     setNewMessageContent("");
     setError(null);
   };
@@ -345,7 +339,7 @@ export default function LawSuitViewer() {
   );
 
   // Função para adicionar cliente via e-mail (Mantida, pois é chamada pelo modal)
-  const handleAddClientByEmail = async (email: string) => {
+  const handleAddClientByEmail = async (lawsuitId: string, email: string) => {
     if (!lawsuitId || !token) {
       setAddClientError("Erro: ID do caso ou token ausente.");
       return;
@@ -356,7 +350,7 @@ export default function LawSuitViewer() {
 
     try {
       // Endpoint para adicionar cliente a um caso por email (POST /api/cases/:lawsuitId/invite-client)
-      const response = await axios.post(`/api/cases/${lawsuitId}/invite-client`, { email }, {
+      const response = await axios.post(`/api/cases/${lawsuit?.id}/invite-client`, { email }, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -529,10 +523,8 @@ export default function LawSuitViewer() {
       <AddClientOnCaseDialog
         isOpen={isAddClientDialogOpen}
         onClose={() => setIsAddClientDialogOpen(false)}
-        lawsuitId={""}
-        onClientAddedOrAssociated={function (message: string): void {
-          throw new Error("Function not implemented.");
-        }}
+        lawsuitId={lawsuit?.id}
+        onClientAddedOrAssociated={handleAddClientByEmail}
       />
     </div>
   );

@@ -83,7 +83,7 @@ export const AddClientOnCaseDialog: React.FC<AddClientOnCaseDialogProps> = ({
       // 1. Criar um registro de convite com o email e o ID do caso/tenant.
       // 2. Gerar um token único.
       // 3. Enviar um e-mail para `clientEmail` com o link de cadastro contendo o token.
-      const response = await axios.post(`/cases/${lawsuitId}/invite-client`, { email: clientEmail.trim() }, {
+      const response = await axios.post(`/api/cases/${lawsuitId}/invite-client`, { email: clientEmail.trim() }, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -142,7 +142,7 @@ export const AddClientOnCaseDialog: React.FC<AddClientOnCaseDialogProps> = ({
 
     try {
       // Endpoint para associar um cliente existente a um caso por ID do cliente
-      const response = await axios.post(`/cases/${lawsuitId}/associate-client`, { clientId }, {
+      const response = await axios.post(`/api/cases/${lawsuitId}/associate-client`, { clientId }, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
