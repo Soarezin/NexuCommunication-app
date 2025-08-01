@@ -2,10 +2,9 @@
 import React, { useState, useEffect, useCallback, type ReactNode } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from './auth/AuthContext'; 
+import { AuthContext } from './auth/AuthContext';
 import type { JwtPayload, AuthUser, RegisterData, ApiErrorResponse, AuthContextType } from '../types/auth';
 
-// Defina a URL base da sua API do backend
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 axios.defaults.baseURL = API_BASE_URL;
@@ -15,95 +14,73 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-    // >>> Alterado para sessionStorage.getItem <<<
-    const [user, setUser] = useState<AuthUser | null>(null);
-    const [token, setToken] = useState<string | null>(sessionStorage.getItem('jwt_token')); 
-    const [loading, setLoading] = useState<boolean>(true); 
+    // >>> CORREÇÃO AQUI: Envolver JSON.parse em um try-catch para evitar que a aplicação quebre <<<
+    const getStoredUser = (): AuthUser | null => {
+        try {
+            const userString = localStorage.getItem('user');
+            if (userString) {
+                return JSON.parse(userString);
+            }
+            return null;
+        } catch (error) {
+            console.error('Erro ao fazer parse do objeto de usuário no localStorage:', error);
+            // Em caso de erro, limpa o user e retorna null
+            localStorage.removeItem('user');
+            return null;
+        }
+    };
+
+    const [user, setUser] = useState<AuthUser | null>(getStoredUser());
+    const [token, setToken] = useState<string | null>(localStorage.getItem('jwt_token'));
+    const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
 
     const logout = useCallback(() => {
         setToken(null);
         setUser(null);
-        // >>> Alterado para sessionStorage.removeItem <<<
-        sessionStorage.removeItem('jwt_token');
+        localStorage.removeItem('jwt_token');
+        localStorage.removeItem('user');
         delete axios.defaults.headers.common['Authorization'];
         navigate('/login');
     }, [navigate]);
 
-    // Efeito para verificar o token no carregamento da aplicação
     useEffect(() => {
-        const loadUserFromToken = () => {
-            if (token) {
-                try {
-                    const base64Url = token.split('.')[1];
-                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                    const decodedPayload: JwtPayload = JSON.parse(window.atob(base64));
+        if (token) {
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        } else {
+            delete axios.defaults.headers.common['Authorization'];
+        }
+    }, [token]);
 
-                    if (decodedPayload.exp && decodedPayload.exp * 1000 < Date.now()) {
-                        console.warn('[AuthProvider] Token JWT expirado localmente.');
-                        logout();
-                        return;
-                    }
-
-                    if (decodedPayload.id && decodedPayload.tenantId) {
-                        setUser({
-                            id: decodedPayload.id,
-                            tenantId: decodedPayload.tenantId,
-                            email: 'carregado@example.com', 
-                            firstName: 'Carregado', 
-                            lastName: 'Automaticamente', 
-                        });
-                        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-                        console.log('[AuthProvider] Token carregado e setado no Axios defaults.');
-                    } else {
-                        console.warn('[AuthProvider] Token JWT inválido ou incompleto no sessionStorage.');
-                        setToken(null);
-                        sessionStorage.removeItem('jwt_token');
-                        logout();
-                    }
-                } catch (err) {
-                    console.error('[AuthProvider] Erro ao decodificar/carregar token JWT:', err);
-                    setToken(null);
-                    sessionStorage.removeItem('jwt_token');
-                    logout();
-                }
-            }
-            setLoading(false); 
-        };
-
-        setLoading(true); 
-        loadUserFromToken();
-    }, [token, logout]);
-
-    // Configurar interceptor do Axios para lidar com erros de autenticação (401/403)
     useEffect(() => {
-        const requestInterceptor = axios.interceptors.request.use((config) => {
-            if (token && !config.headers.Authorization) {
-                config.headers.Authorization = `Bearer ${token}`;
-            }
-            return config;
-        }, (err) => {
-            return Promise.reject(err);
-        });
+      if (user && token) {
+        setLoading(false);
+        return;
+      }
+      if (token && !user) {
+        try {
+          const base64Url = token.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const decodedPayload: JwtPayload = JSON.parse(window.atob(base64));
 
-        const responseInterceptor = axios.interceptors.response.use(
-            (response) => response,
-            (err: unknown) => {
-                if (axios.isAxiosError(err) && err.response) {
-                    if (err.response.status === 401 || err.response.status === 403) {
-                        console.warn('Token expirado ou inválido detectado pelo interceptor. Redirecionando para login.');
-                    }
-                }
-                return Promise.reject(err);
-            }
-        );
-
-        return () => {
-            axios.interceptors.request.eject(requestInterceptor);
-            axios.interceptors.response.eject(responseInterceptor);
-        };
-    }, [token, logout]);
+          if (decodedPayload.userId && decodedPayload.tenantId) {
+              setUser({
+                  id: decodedPayload.userId,
+                  tenantId: decodedPayload.tenantId,
+                  email: decodedPayload.email,
+                  firstName: 'Carregado', 
+                  lastName: 'Automaticamente',
+              });
+              console.log('[AuthProvider] Usuário carregado do token no localStorage.');
+          }
+        } catch (err) {
+            console.error('[AuthProvider] Erro ao decodificar/carregar token JWT do localStorage:', err);
+            logout();
+        }
+      }
+      setLoading(false);
+    }, [token, user, logout]);
 
     const login = async (emailParam: string, passwordParam: string): Promise<boolean> => {
         setLoading(true);
@@ -113,12 +90,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             if (response.data.token && response.data.user) {
                 setToken(response.data.token);
                 setUser(response.data.user);
-                // >>> Alterado para sessionStorage.setItem <<<
-                sessionStorage.setItem('jwt_token', response.data.token);
-                console.log('[AuthContext] Token salvo no sessionStorage após login:', response.data.token.substring(0, 30) + '...');
+                localStorage.setItem('jwt_token', response.data.token);
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+                console.log('[AuthContext] Token e User salvos no localStorage após login.');
                 return true;
             } else {
-                console.log('[AuthContext] Login falhou: Token ou usuário ausente na resposta.');
                 setError(response.data.message || 'Credenciais inválidas.');
                 return false;
             }
@@ -137,7 +113,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setError(errorMessage);
             return false;
         } finally {
-            setLoading(false); 
+            setLoading(false);
         }
     };
 
@@ -149,12 +125,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             if (response.data.token && response.data.user) {
                 setToken(response.data.token);
                 setUser(response.data.user);
-                // >>> Alterado para sessionStorage.setItem <<<
-                sessionStorage.setItem('jwt_token', response.data.token);
-                console.log('[AuthContext] Token salvo no sessionStorage após registro:', response.data.token.substring(0, 30) + '...');
+                localStorage.setItem('jwt_token', response.data.token);
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+                console.log('[AuthContext] Token e User salvos no localStorage após registro.');
                 return true;
             } else {
-                console.log('[AuthContext] Registro falhou: Token ou usuário ausente na resposta.');
                 const apiError = response.data as ApiErrorResponse;
                 let msg = apiError.message || 'Erro no registro.';
                 if (apiError.errors && apiError.errors.length > 0) {
