@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 // >>> CORREÇÃO AQUI: Adicione useSearchParams <<<
 import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { FolderOpen, Users, Briefcase, PlusCircle, Menu } from "lucide-react";
+import { FolderOpen, Users, Briefcase, Calendar, PlusCircle, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -133,6 +133,9 @@ export default function Sidebar() {
         </Link>
         <Link to="/settings" className={`flex items-center gap-2 p-2 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 ${location.pathname === '/settings' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>
           <Briefcase size={18} /> Configurações
+        </Link>
+        <Link to="/calendar" className={`flex items-center gap-2 p-2 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 ${location.pathname === '/calendar' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>
+          <Calendar size={18} /> Calendário
         </Link>
       </nav>
 
