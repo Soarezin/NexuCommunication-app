@@ -1,71 +1,72 @@
-// src/pages/settings/EmployeesSettings.tsx
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import axios from "axios"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface Employee {
   id: string
   name: string
   email: string
-  role: string
-  active: boolean
+  role: "Admin" | "Lawyer" 
+  isActive: boolean
+  status: "Active" | "Pending" | "Suspended" | "Revoked"
 }
 
 export default function EmployeesSettings() {
-  const [employees, setEmployees] = useState<Employee[]>([
-    {
-      id: "1",
-      name: "João Gerhardt",
-      email: "joao@example.com",
-      role: "admin",
-      active: true,
-    },
-    {
-      id: "2",
-      name: "Maria Oliveira",
-      email: "maria@example.com",
-      role: "advogado",
-      active: true,
-    },
-  ])
-
+  const [employees, setEmployees] = useState<Employee[]>([])
   const [newEmail, setNewEmail] = useState("")
-  const [newRole, setNewRole] = useState("advogado")
+  const [newRole, setNewRole] = useState<Employee["role"]>("Lawyer")
+
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const response = await axios.get("/users")
+        setEmployees(response.data.users) // ou .data dependendo da estrutura da resposta
+      } catch (err) {
+        console.error("Erro ao buscar funcionários:", err)
+      }
+    }
+
+    fetchEmployees()
+  }, [])
 
   function handleInvite() {
-    if (!newEmail) return
-    // Aqui você integraria com backend: POST /employees/invite
-    setEmployees((prev) => [
-      ...prev,
-      {
-        id: String(Date.now()),
-        name: "Novo funcionário",
-        email: newEmail,
-        role: newRole,
-        active: true,
-      },
-    ])
+    // Aqui você enviaria um POST para /users/invite, etc.
     setNewEmail("")
   }
 
-  function handleRoleChange(id: string, newRole: string) {
+  function handleRoleChange(id: string, newRole: Employee["role"]) {
     setEmployees((prev) =>
       prev.map((emp) => (emp.id === id ? { ...emp, role: newRole } : emp))
     )
+    // Aqui você pode fazer um PUT /users/:id com o novo role
   }
 
   function handleToggleActive(id: string) {
     setEmployees((prev) =>
-      prev.map((emp) => (emp.id === id ? { ...emp, active: !emp.active } : emp))
+      prev.map((emp) =>
+        emp.id === id
+          ? {
+              ...emp,
+              status: emp.status === "Active" ? "Suspended" : "Active",
+            }
+          : emp
+      )
     )
+    // Aqui você pode fazer um PUT /users/:id com o novo status
   }
 
   return (
     <div className="space-y-6">
-      {/* Área de convite */}
       <div className="flex flex-col md:flex-row gap-4 items-end">
         <div className="flex-1">
           <Label htmlFor="email">E-mail do novo funcionário</Label>
@@ -80,21 +81,20 @@ export default function EmployeesSettings() {
         </div>
         <div>
           <Label>Função</Label>
-          <Select value={newRole} onValueChange={setNewRole}>
+          <Select value={newRole} onValueChange={(value) => setNewRole(value as Employee["role"])}>
             <SelectTrigger className="mt-1">
               <SelectValue placeholder="Selecione a função" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="advogado">Advogado</SelectItem>
-              <SelectItem value="assistente">Assistente</SelectItem>
+              <SelectItem value="Admin">Admin</SelectItem>
+              <SelectItem value="Lawyer">Advogado</SelectItem>
+              <SelectItem value="Paralegal">Assistente</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <Button onClick={handleInvite}>Convidar</Button>
       </div>
 
-      {/* Lista de funcionários */}
       <div className="border rounded-md p-4 space-y-4">
         {employees.map((emp) => (
           <div
@@ -106,22 +106,27 @@ export default function EmployeesSettings() {
               <p className="text-sm text-muted-foreground">{emp.email}</p>
             </div>
             <div className="flex items-center gap-4">
-              <Select value={emp.role} onValueChange={(val) => handleRoleChange(emp.id, val)}>
+              <Select
+                value={emp.role}
+                onValueChange={(val) => handleRoleChange(emp.id, val as Employee["role"])}
+              >
                 <SelectTrigger className="w-[140px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="advogado">Advogado</SelectItem>
-                  <SelectItem value="assistente">Assistente</SelectItem>
+                  <SelectItem value="Admin">Admin</SelectItem>
+                  <SelectItem value="Lawyer">Advogado</SelectItem>
+                  <SelectItem value="Paralegal">Assistente</SelectItem>
                 </SelectContent>
               </Select>
               <div className="flex items-center gap-2">
                 <Switch
-                  checked={emp.active}
+                  checked={emp.isActive}
                   onCheckedChange={() => handleToggleActive(emp.id)}
                 />
-                <span className="text-sm">{emp.active ? "Ativo" : "Inativo"}</span>
+                <span className="text-sm">
+                  {emp.isActive ? "Ativo" : "Inativo"}
+                </span>
               </div>
             </div>
           </div>
