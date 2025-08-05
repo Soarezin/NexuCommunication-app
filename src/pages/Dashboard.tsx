@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Users, FolderOpen, MessageCircle } from "lucide-react";
 import { useAuth } from "../context/auth/useAuth";
+import EditUserDialog from "./user/Dialog/editUserDialog";
 import axios from "axios"; // Importe axios
 
 export default function DashboardPage() {
@@ -33,7 +34,9 @@ export default function DashboardPage() {
         setMessageCount(null);
       } catch (err) {
         console.error("Erro ao carregar dados do dashboard:", err);
-        setError("Não foi possível carregar os dados do dashboard. Verifique sua conexão ou permissões.");
+        setError(
+          "Não foi possível carregar os dados do dashboard. Verifique sua conexão ou permissões."
+        );
         setClientCount(null);
         setCaseCount(null);
         setMessageCount(null);
@@ -65,7 +68,10 @@ export default function DashboardPage() {
     fetchUsers();
   }, [isAuthenticated, authLoading, token]);
 
-  const [editUserDialog, setEditUserDialog] = useState<{ isOpen: boolean; user: any | null }>({
+  const [editUserDialog, setEditUserDialog] = useState<{
+    isOpen: boolean;
+    user: any | null;
+  }>({
     isOpen: false,
     user: null,
   });
@@ -78,7 +84,7 @@ export default function DashboardPage() {
     try {
       setEditUserDialog({ isOpen: true, user });
       const response = await axios.get(`/permissions`);
-      
+
       // Add logic to display permissions data in the modal
     } catch (err) {
       console.error("Erro ao carregar permissões:", err);
@@ -90,7 +96,9 @@ export default function DashboardPage() {
       <h1 className="text-2xl font-bold">Dashboard</h1>
 
       {isLoadingData ? (
-        <div className="text-center text-lg text-gray-500 dark:text-gray-400">Carregando dados...</div>
+        <div className="text-center text-lg text-gray-500 dark:text-gray-400">
+          Carregando dados...
+        </div>
       ) : error ? (
         <div className="text-center text-lg text-red-500">{error}</div>
       ) : (
@@ -98,31 +106,44 @@ export default function DashboardPage() {
           <div className="flex items-center gap-4 bg-white dark:bg-zinc-800 p-4 rounded-lg shadow border dark:border-zinc-700">
             <Users className="text-blue-500" />
             <div>
-              <div className="text-xl font-semibold">{clientCount !== null ? clientCount : "-"}</div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">Clients</div>
+              <div className="text-xl font-semibold">
+                {clientCount !== null ? clientCount : "-"}
+              </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Clients
+              </div>
             </div>
           </div>
 
           <div className="flex items-center gap-4 bg-white dark:bg-zinc-800 p-4 rounded-lg shadow border dark:border-zinc-700">
             <FolderOpen className="text-green-500" />
             <div>
-              <div className="text-xl font-semibold">{caseCount !== null ? caseCount : "-"}</div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">Lawsuits</div>
+              <div className="text-xl font-semibold">
+                {caseCount !== null ? caseCount : "-"}
+              </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Lawsuits
+              </div>
             </div>
           </div>
 
           <div className="flex items-center gap-4 bg-white dark:bg-zinc-800 p-4 rounded-lg shadow border dark:border-zinc-700">
             <MessageCircle className="text-purple-500" />
             <div>
-              <div className="text-xl font-semibold">{messageCount !== null ? messageCount : "N/A"}</div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">Messages</div>
+              <div className="text-xl font-semibold">
+                {messageCount !== null ? messageCount : "N/A"}
+              </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Messages
+              </div>
             </div>
           </div>
         </div>
       )}
 
       <p className="text-gray-700 dark:text-gray-300">
-        Selecione um cliente na barra lateral para visualizar seus casos, ou navegue para um processo específico para continuar trabalhando.
+        Selecione um cliente na barra lateral para visualizar seus casos, ou
+        navegue para um processo específico para continuar trabalhando.
       </p>
 
       <div className="mt-6">
@@ -131,9 +152,15 @@ export default function DashboardPage() {
           <table className="min-w-full bg-white dark:bg-zinc-800 border dark:border-zinc-700 rounded-lg">
             <thead>
               <tr>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 border-b dark:border-zinc-700">Name</th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 border-b dark:border-zinc-700">Email</th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 border-b dark:border-zinc-700">Criado em</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 border-b dark:border-zinc-700">
+                  Name
+                </th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 border-b dark:border-zinc-700">
+                  Email
+                </th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 border-b dark:border-zinc-700">
+                  Criado em
+                </th>
                 <th className="px-4 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 border-b dark:border-zinc-700"></th>
               </tr>
             </thead>
@@ -142,7 +169,7 @@ export default function DashboardPage() {
                 users.map((user) => (
                   <tr key={user.id}>
                     <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border-b dark:border-zinc-700">
-                      {user.name}
+                      {user.firstName}
                     </td>
                     <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border-b dark:border-zinc-700">
                       {user.email}
@@ -158,7 +185,9 @@ export default function DashboardPage() {
                         Permissões
                       </button>
                       <button
-                        onClick={() => setEditUserDialog({ isOpen: true, user })}
+                        onClick={() =>
+                          setEditUserDialog({ isOpen: true, user })
+                        }
                         className="ml-4 text-blue-500 hover:underline"
                       >
                         Editar
@@ -177,26 +206,24 @@ export default function DashboardPage() {
                 </tr>
               )}
             </tbody>
+            <EditUserDialog
+              isOpen={editUserDialog.isOpen}
+              user={editUserDialog.user}
+              onClose={closeEditUserDialog}
+              onSave={async ({ userId, permissionIds }) => {
+                try {
+                  await axios.patch(`/permissions/${userId}`, {
+                    permissionIds,
+                  });
+                  // talvez exiba toast de sucesso aqui
+                } catch (error) {
+                  console.error("Erro ao salvar permissões:", error);
+                }
+              }}
+            />
           </table>
         </div>
       </div>
-
-      {editUserDialog.isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-zinc-800 p-6 rounded-lg shadow-lg w-96">
-            <h3 className="text-lg font-bold mb-4">Edit User</h3>
-            <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
-              Editing user: {editUserDialog.user?.firstName} {editUserDialog.user?.lastName}
-            </p>  
-            <button
-              onClick={closeEditUserDialog}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

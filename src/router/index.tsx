@@ -3,7 +3,7 @@ import Login from "../pages/login/Login"
 import Dashboard from "../pages/Dashboard"
 import LawSuit from "../pages/LawSuit"
 import Client from "../pages/Client"
-import SettingsPage from "../pages/profile/SettingsPage"
+import SettingsPage from "../pages/settings/SettingsPage"
 import MainLayout from "../layouts/MainLayout"
 import type { JSX } from "react"
 

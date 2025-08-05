@@ -92,6 +92,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 setUser(response.data.user);
                 localStorage.setItem('jwt_token', response.data.token);
                 localStorage.setItem('user', JSON.stringify(response.data.user));
+                localStorage.setItem('tenantId',response.data.user.tenantId);
                 console.log('[AuthContext] Token e User salvos no localStorage após login.');
                 return true;
             } else {
@@ -127,6 +128,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 setUser(response.data.user);
                 localStorage.setItem('jwt_token', response.data.token);
                 localStorage.setItem('user', JSON.stringify(response.data.user));
+                localStorage.setItem('tenantId', JSON.stringify(response.data.user.tenantId));
                 console.log('[AuthContext] Token e User salvos no localStorage após registro.');
                 return true;
             } else {
