@@ -1,11 +1,13 @@
-// src/pages/RedirectBasedOnRole.tsx
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/auth/useAuth";
 
 export default function RedirectBasedOnRole() {
-  const { user } = useAuth();
-  const userRole = localStorage.getItem("role");
+  const { user, loading } = useAuth();
 
-  if (userRole === "Client") return <Navigate to="/client" replace />;
-  return <Navigate to="/dashboard" replace />;
+  if (loading) return <div>Carregando autenticação...</div>;
+  if (!user) return <Navigate to="/login" replace />;
+
+  return user.role === "Client"
+    ? <Navigate to="/client" replace />
+    : <Navigate to="/dashboard" replace />;
 }

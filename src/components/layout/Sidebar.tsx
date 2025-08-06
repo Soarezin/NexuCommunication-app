@@ -34,7 +34,12 @@ interface Client {
   cases?: LawSuit[];
 }
 
+interface ClientWithCases extends Client {
+  cases: LawSuit[];
+}
+
 interface LawSuit {
+  clientPrimaryId: string;
   id: string;
   title: string;
   status: string;
@@ -53,72 +58,81 @@ export default function Sidebar() {
   const [errorClients, setErrorClients] = useState<string | null>(null);
   const [openClientIds, setOpenClientIds] = useState<Set<string>>(new Set());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    
+useEffect(() => {
+  const fetchClientsAndCases = async () => {
+    if (!isAuthenticated || authLoading || !token || !user?.tenantId) {
+      setLoadingClients(false);
+      return;
+    }
 
-  useEffect(() => {
-    const fetchClientsAndCases = async () => {
-      if (!isAuthenticated || authLoading || !token || !user?.tenantId) {
-        setLoadingClients(false);
-        return;
+    setLoadingClients(true);
+    setErrorClients(null);
+
+    try {
+      const clientsResponse = await axios.get("/clients");
+      const fetchedClients: Client[] = clientsResponse.data.clients || [];
+
+      let clientsWithCases: ClientWithCases[] = [];
+
+      if (user.role === "Client") {
+        // CLIENTE BUSCA CASOS VINCULADOS
+        clientsWithCases = await Promise.all(
+          fetchedClients.map(async (client) => {
+            const casesRes = await axios.get(`/cases?clientId=${client.id}`);
+            return { ...client, cases: casesRes.data.cases || [] };
+          })
+        );
+      } else {
+        // ADMIN OU LAWYER BUSCA TODOS OS CASOS E ORGANIZA POR CLIENTE
+        const allCasesRes = await axios.get("/cases");
+        const allCases: LawSuit[] = allCasesRes.data || [];
+
+        clientsWithCases = fetchedClients.map((client) => {
+          const clientCases = allCases.filter(
+            (c) => c.clientPrimaryId === client.id
+          );
+          return { ...client, cases: clientCases };
+        });
       }
 
-      setLoadingClients(true);
-      setErrorClients(null);
+      setClients(clientsWithCases);
 
-      try {
-        const clientsResponse = await axios.get("/clients");
-        const fetchedClients: Client[] = clientsResponse.data.clients || [];
+      // Expansão automática do cliente se na URL
+      const pathSegments = location.pathname.split("/");
+      const activeClientIdFromUrl =
+        location.pathname.startsWith("/client/")
+          ? location.pathname.split("/client/")[1]?.split("/")[0]
+          : null;
 
-        const clientsWithCasesPromises = fetchedClients.map(async (client) => {
-          try {
-            const casesResponse = await axios.get(
-              `/cases?clientId=${client.id}`
-            );
-            const clientCases: LawSuit[] = casesResponse.data.cases || [];
-            return { ...client, cases: clientCases };
-          } catch (caseError) {
-            console.error(
-              `Erro ao buscar casos para o cliente ${client.id}:`,
-              caseError
-            );
-            return { ...client, cases: [] };
-          }
-        });
-
-        const clientsWithCases = await Promise.all(clientsWithCasesPromises);
-        setClients(clientsWithCases);
-
-        // Lógica para expandir o cliente se o caso ou o próprio cliente estiver ativo na URL
-        const pathSegments = location.pathname.split("/");
-        const activeClientIdFromUrl = searchParams.get("id"); // Agora searchParams está disponível
-
-        clientsWithCases.forEach((client) => {
-          if (client.id === activeClientIdFromUrl) {
+      clientsWithCases.forEach((client) => {
+        if (client.id === activeClientIdFromUrl) {
+          setOpenClientIds((prev) => new Set(prev).add(client.id));
+        } else if (pathSegments[1] === "lawsuit" && pathSegments[2]) {
+          const activeLawsuitId = pathSegments[2];
+          if (client.cases?.some((c) => c.id === activeLawsuitId)) {
             setOpenClientIds((prev) => new Set(prev).add(client.id));
-          } else if (pathSegments[1] === "lawsuit" && pathSegments[2]) {
-            const activeLawsuitId = pathSegments[2];
-            if (client.cases?.some((c) => c.id === activeLawsuitId)) {
-              setOpenClientIds((prev) => new Set(prev).add(client.id));
-            }
           }
-        });
-      } catch (err) {
-        console.error("Erro ao carregar clientes e casos para a sidebar:", err);
-        setErrorClients("Não foi possível carregar clientes e casos.");
-      } finally {
-        setLoadingClients(false);
-      }
-    };
+        }
+      });
+    } catch (err) {
+      console.error("Erro ao carregar clientes e casos:", err);
+      setErrorClients("Erro ao buscar dados dos clientes.");
+    } finally {
+      setLoadingClients(false);
+    }
+  };
 
-    // >>> CORREÇÃO AQUI: Adicione searchParams na lista de dependências <<<
-    fetchClientsAndCases();
-  }, [
-    isAuthenticated,
-    authLoading,
-    token,
-    user?.tenantId,
-    location.pathname,
-    searchParams,
-  ]); // Adicionado searchParams
+  fetchClientsAndCases();
+}, [
+  isAuthenticated,
+  authLoading,
+  token,
+  user?.tenantId,
+  user?.role,
+  location.pathname,
+]);
+
 
   const handleClientToggle = useCallback((clientId: string) => {
     setOpenClientIds((prev) => {
@@ -216,9 +230,8 @@ export default function Sidebar() {
                   className="w-full space-y-2"
                 >
                   <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className={`w-full justify-between pr-2 text-base font-normal ${
+                    <div
+                      className={`w-full cursor-pointer flex items-center justify-between p-2 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 ${
                         location.pathname === `/client/${client.id}`
                           ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
                           : ""
@@ -235,10 +248,11 @@ export default function Sidebar() {
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         {client.cases?.length || 0}
                       </span>
-                    </Button>
+                    </div>
                   </CollapsibleTrigger>
+
                   <CollapsibleContent className="pl-6 space-y-1">
-                    {client.cases && client.cases.length > 0 ? (
+                    {(client.cases ?? []).length > 0 ? (
                       client.cases.map((lawsuit) => (
                         <Link
                           key={lawsuit.id}

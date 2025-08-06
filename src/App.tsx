@@ -5,33 +5,28 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import MainLayout from "./layouts/MainLayout";
-import LawSuitViewer from "./pages/lawSuits/LawSuitViewer";
-import ClientDashboard from "./pages/client/ClientDashboard";
-import DashboardPage from "./pages/Dashboard";
-import SettingsPage from "./pages/settings/SettingsPage";
-import Login from "./pages/login/Login";
+import { Toaster } from "sonner";
+import type { ReactNode } from "react";
+
 import { AuthProvider } from "./context/AuthProvider";
 import { useAuth } from "./context/auth/useAuth";
-import CreateLawsuitPage from "./pages/lawSuits/CreateLawsuitPage";
-import type { ReactNode } from "react";
-import { Toaster } from "sonner";
+
 import ProtectedRouteByRole from "./components/ProtectedRouteByRole";
+import PrivateRoute from "./components/PrivateRoute";
 import RedirectBasedOnRole from "./pages/RedirectBasedOnRole";
+
+import Login from "./pages/login/Login";
 import RegisterClientPage from "./pages/login/RegisterClientPage";
+
+import DashboardPage from "./pages/Dashboard";
+import SettingsPage from "./pages/settings/SettingsPage";
+import LawSuitViewer from "./pages/lawSuits/LawSuitViewer";
+import CreateLawsuitPage from "./pages/lawSuits/CreateLawsuitPage";
+import ClientDashboard from "./pages/client/ClientDashboard";
 import ClientPage from "./pages/ClientPage";
 
-interface PrivateRouteProps {
-  children: ReactNode;
-}
-
-const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) return <div>Carregando autenticação...</div>;
-
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
-};
+import MainLayout from "./layouts/MainLayout";
+import ClientLayout from "./layouts/ClientLayout";
 
 export default function App() {
   return (
@@ -40,73 +35,48 @@ export default function App() {
         <Toaster position="top-right" richColors />
 
         <Routes>
-          <Route path="/login" element={<Login />} />z
+          {/* Rotas públicas */}
+          <Route path="/login" element={<Login />} />
           <Route path="/register-client" element={<RegisterClientPage />} />
-          <Route element={<MainLayout />}>
-            {/* Cliente */}
-            <Route
-              path="/client"
-              element={
-                <ProtectedRouteByRole allowedRoles={["Client"]}>
-                  <ClientDashboard />
-                </ProtectedRouteByRole>
-              }
-            />
-            <Route
-              path="/client/:id"
-              element={
-                <ProtectedRouteByRole allowedRoles={["Lawyer", "Admin"]}>
-                  <ClientPage />
-                </ProtectedRouteByRole>
-              }
-            />
 
-            {/* Advogado/Admin */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRouteByRole allowedRoles={["Lawyer", "Admin"]}>
-                  <DashboardPage />
-                </ProtectedRouteByRole>
-              }
-            />
+          {/* Rotas do CLIENTE (usam ClientLayout) */}
+          <Route
+            element={
+              <ProtectedRouteByRole allowedRoles={["Client"]}>
+                <ClientLayout />
+              </ProtectedRouteByRole>
+            }
+          >
+            <Route path="/client" element={<ClientDashboard />} />
+          </Route>
 
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRouteByRole allowedRoles={["Lawyer", "Admin"]}>
-                  <SettingsPage />
-                </ProtectedRouteByRole>
-              }
-            />
-
-            <Route
-              path="/lawsuit/:id"
-              element={
-                <PrivateRoute>
-                  <LawSuitViewer />
-                </PrivateRoute>
-              }
-            />
-
+          {/* Rotas de ADMIN/ADVOGADO (usam MainLayout) */}
+          <Route
+            element={
+              <ProtectedRouteByRole allowedRoles={["Admin", "Lawyer"]}>
+                <MainLayout />
+              </ProtectedRouteByRole>
+            }
+          >
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/client/:id" element={<ClientPage />} />
             <Route
               path="/client/:clientId/create-lawsuit"
-              element={
-                <ProtectedRouteByRole allowedRoles={["Lawyer", "Admin"]}>
-                  <CreateLawsuitPage />
-                </ProtectedRouteByRole>
-              }
+              element={<CreateLawsuitPage />}
             />
-
-            <Route
-              path="/"
-              element={
-                <PrivateRoute>
-                  <RedirectBasedOnRole />
-                </PrivateRoute>
-              }
-            />
+            <Route path="/lawsuit/:id" element={<LawSuitViewer />} />
           </Route>
+
+          {/* Redirecionamento inicial com base na role */}
+          <Route
+            path="/"
+            element={
+              <PrivateRoute>
+                <RedirectBasedOnRole />
+              </PrivateRoute>
+            }
+          />
         </Routes>
       </AuthProvider>
     </Router>
