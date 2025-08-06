@@ -2,6 +2,7 @@
 
 // Payload do JWT (o que vem no token decodificado do seu backend)
 export interface JwtPayload {
+    role: string;
     userId: string;
     tenantId: string;
     iat?: number; // Issued At
@@ -17,6 +18,7 @@ export interface AuthUser {
     firstName: string;
     lastName: string;
     tenantId: string;
+    role: string;
     // ... adicione outros campos do usuário que você retorna no login/registro
 }
 

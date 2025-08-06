@@ -71,6 +71,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                   email: decodedPayload.email,
                   firstName: 'Carregado', 
                   lastName: 'Automaticamente',
+                  role: decodedPayload.role,
               });
               console.log('[AuthProvider] Usuário carregado do token no localStorage.');
           }
@@ -93,6 +94,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 localStorage.setItem('jwt_token', response.data.token);
                 localStorage.setItem('user', JSON.stringify(response.data.user));
                 localStorage.setItem('tenantId',response.data.user.tenantId);
+                localStorage.setItem('role', response.data.user.role);
                 console.log('[AuthContext] Token e User salvos no localStorage após login.');
                 return true;
             } else {
@@ -129,6 +131,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 localStorage.setItem('jwt_token', response.data.token);
                 localStorage.setItem('user', JSON.stringify(response.data.user));
                 localStorage.setItem('tenantId', JSON.stringify(response.data.user.tenantId));
+                localStorage.setItem('role', response.data.user.role);
                 console.log('[AuthContext] Token e User salvos no localStorage após registro.');
                 return true;
             } else {
