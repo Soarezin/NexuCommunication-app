@@ -55,7 +55,7 @@ interface Message {
   receiverClientId: string; 
   viewed: boolean;
   viewedAt?: string;
-  sender: { 
+  senderClient: { 
     id: string;
     firstName: string;
     lastName: string;
@@ -173,6 +173,7 @@ export default function LawSuitViewer() {
   useEffect(() => {
     if (isAuthenticated && token && lawsuit && user) {
       const onNewMessage = (msg: Message) => {
+        console.log('TA AQUI A MSG',msg)
         setMessages((prevMessages) => {
           if (
             msg.caseId === lawsuit.id &&
@@ -465,7 +466,7 @@ export default function LawSuitViewer() {
                     }`}
                   >
                     <p className="text-sm font-medium">
-                      {msg.senderId === user?.id ? "Você" : msg.sender.firstName}
+                      {msg.senderId === user?.id ? "Você" : msg.senderClient?.firstName }
                     </p>
                     <p className="text-sm">{msg.content}</p>
                     <div className="text-xs mt-1 flex justify-between items-center">

@@ -262,7 +262,6 @@ useEffect(() => {
                               ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
                               : ""
                           }`}
-                          onClick={() => setIsMobileMenuOpen(false)}
                         >
                           <Briefcase size={14} /> {lawsuit.title}
                         </Link>

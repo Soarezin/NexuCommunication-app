@@ -48,6 +48,7 @@ export default function App() {
             }
           >
             <Route path="/client" element={<ClientDashboard />} />
+            <Route path="/client/lawsuit/:id" element={<LawSuitViewer />} />
           </Route>
 
           {/* Rotas de ADMIN/ADVOGADO (usam MainLayout) */}

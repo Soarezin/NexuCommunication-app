@@ -40,7 +40,7 @@ interface ClientFormData {
 }
 
 export default function ClientPage() {
-  const [searchParams] = useSearchParams();
+  const [ ] = useSearchParams();
   const navigate = useNavigate();
   const { token, isAuthenticated, loading: authLoading } = useAuth();
 
@@ -65,10 +65,10 @@ export default function ClientPage() {
   // Efeito para determinar o modo (criação vs. edição/visualização) e buscar dados
 
   const { id: idFromUrl } = useParams(); // 👈 Pega o :id da URL
-
   useEffect(() => {
-    const action = searchParams.get("action"); // Isso ainda pode existir como ?action=create
-
+    const urlParams = new URLSearchParams(window.location.search);
+    const action = urlParams.get("action");
+  
     if (action === "create") {
       setIsCreating(true);
       setClientId(null);
@@ -87,7 +87,8 @@ export default function ClientPage() {
       setError("Nenhum modo de operação especificado para Cliente.");
       setIsLoading(false);
     }
-  }, [searchParams, idFromUrl, isAuthenticated, authLoading, token, navigate]);
+  }, [idFromUrl, isAuthenticated, authLoading, token, navigate]);
+  
 
   // Função para buscar os detalhes do cliente para edição/visualização
   async function fetchClientDetails(id: string) {

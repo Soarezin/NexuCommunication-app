@@ -25,8 +25,6 @@ export default function ClientDashboard() {
         const casesResponse = await axios.get(`/cases?clientId=${user.id}`);
         setCaseCount(casesResponse.data?.cases?.length || 0);
 
-        const messagesResponse = await axios.get(`/messages/count?userId=${user.id}`);
-        setMessageCount(messagesResponse.data?.count || 0);
       } catch (err) {
         console.error("Erro ao carregar dados do dashboard:", err);
         setError("Erro ao carregar dados. Tente novamente mais tarde.");
