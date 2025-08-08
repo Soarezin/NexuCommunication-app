@@ -7,7 +7,8 @@ import {
   connectChatSocket,
   sendChatMessage,
   disconnectChatSocket,
-  // markMessageViewedBySocket // Removido da importação, pois não é usado diretamente aqui via socket
+  joinCaseRoom,
+  markMessageViewedBySocket
 } from "../../services/chatService";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -171,44 +172,43 @@ export default function LawSuitViewer() {
 
   // Efeito para conectar/desconectar Socket.IO e lidar com novas mensagens
   useEffect(() => {
-    if (isAuthenticated && token && lawsuit && user) {
-      const onNewMessage = (msg: Message) => {
-        console.log('TA AQUI A MSG',msg)
-        setMessages((prevMessages) => {
-          if (
-            msg.caseId === lawsuit.id &&
-            !prevMessages.some((m) => m.id === msg.id)
-          ) {
-            return [...prevMessages, msg];
-          }
-          return prevMessages;
-        });
-        scrollToBottom();
-      };
+  if (isAuthenticated && token && lawsuit && user) {
+    const onNewMessage = (msg: Message) => {
+      setMessages((prev) =>
+        msg.caseId === lawsuit.id && !prev.some((m) => m.id === msg.id)
+          ? [...prev, msg]
+          : prev
+      );
+    };
 
-      const onMessageViewed = (messageId: string) => {
-        setMessages((prevMessages) =>
-          prevMessages.map((msg) =>
-            msg.id === messageId
-              ? { ...msg, viewed: true, viewedAt: new Date().toISOString() }
-              : msg
-          )
-        );
-      };
+    const onMessageViewed = (messageId: string) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId
+            ? { ...msg, viewed: true, viewedAt: new Date().toISOString() }
+            : msg
+        )
+      );
+    };
 
-      const onError = (err: string) => {
-        setError(`Erro no chat: ${err}`);
-      };
+    const onError = (err: string) => {
+      setError(`Erro no chat: ${err}`);
+    };
 
-      connectChatSocket(token, onNewMessage, onMessageViewed, onError);
-      console.log("[LawSuitViewer] Socket de chat conectado.");
+    const socketInstance = connectChatSocket(token, onNewMessage, onMessageViewed, onError);
 
-      return () => {
-        disconnectChatSocket();
-        console.log("[LawSuitViewer] Socket de chat desconectado.");
-      };
-    }
-  }, [isAuthenticated, token, lawsuit, user]); // Removido fetchMessagesHistory daqui, pois já é dependência do fetchLawsuitDetails
+    socketInstance.on("connect", () => {
+      console.log("[LawSuitViewer] Conectado, emitindo joinCase:", lawsuit.id);
+      socketInstance.emit("joinCase", lawsuit.id); // 🔥 AQUI!
+    });
+
+    return () => {
+      disconnectChatSocket();
+    };
+  }
+}, [isAuthenticated, token, lawsuit, user]);
+
+ // Removido fetchMessagesHistory daqui, pois já é dependência do fetchLawsuitDetails
 
   useEffect(() => {
     scrollToBottom();

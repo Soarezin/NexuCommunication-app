@@ -41,19 +41,30 @@ let socket: Socket | null = null;
 // Adapte para como você acessa suas variáveis de ambiente no frontend (ex: import.meta.env.VITE_API_BASE_URL)
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
+export const joinCaseRoom = (caseId: string) => {
+    if (socket && socket.connected && caseId) {
+        console.log(`[ChatService] Entrando na sala do caso ${caseId}`);
+        socket.emit("joinCase", caseId);
+    } else {
+        console.warn("[ChatService] Não foi possível entrar na sala, socket desconectado ou caseId inválido.");
+    }
+};
+
+
 /**
  * Conecta o cliente Socket.IO ao servidor.
  * @param {string} token - O token JWT do usuário autenticado.
  * @param {function(ChatMessage): void} onNewMessage - Callback para quando uma nova mensagem é recebida.
  * @param {function(string): void} onMessageViewed - Callback para quando uma mensagem é marcada como visualizada.
  * @param {function(string): void} onError - Callback para erros de conexão ou mensagem.
+ * @param {string} caseId - ID do caso.
  * @returns {Socket} A instância do socket conectado.
  */
 export const connectChatSocket = (
     token: string,
     onNewMessage: (message: ChatMessage) => void,
     onMessageViewed: (messageId: string) => void,
-    onError: (error: string) => void
+    onError: (error: string) => void,
 ): Socket => {
     // Desconecta o socket existente se houver um antes de criar um novo
     if (socket && socket.connected) {
@@ -73,7 +84,7 @@ export const connectChatSocket = (
 
     // Evento de conexão bem-sucedida
     socket.on('connect', () => {
-        console.log('[ChatService] Socket.IO conectado:', socket?.id);
+        console.log('[ChatService] Socket.IO conectado:', socket?.id);;
     });
 
     // Evento de desconexão

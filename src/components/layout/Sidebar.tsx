@@ -5,7 +5,6 @@ import {
   Link,
   useNavigate,
   useLocation,
-  useSearchParams,
 } from "react-router-dom";
 import {
   FolderOpen,
@@ -51,7 +50,6 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   // >>> CORREÇÃO AQUI: Use o hook useSearchParams para obter searchParams <<<
-  const [searchParams] = useSearchParams();
 
   const [clients, setClients] = useState<Client[]>([]);
   const [loadingClients, setLoadingClients] = useState(true);
